@@ -1,8 +1,13 @@
 using System;
 using System.Numerics;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
+    /// <summary>
+    /// Class <c>LamportSigner</c> takes a message and using a tuple of public keys generate a 
+    /// signed message.
+    /// </summary>
 class LamportSigner
 {
     public List<(BigInteger zero, BigInteger one)> privateKey = new List<(BigInteger, BigInteger)>();
@@ -15,21 +20,34 @@ class LamportSigner
         this.HashFunc = HashFunc;
     }
 
-    static void Main()
-    {
-        string testString = "Hello World!";
+    // static void Main()
+    // {
+    //     // string testString = "Hello World!";
 
-        SHA256 hashFunc = SHA256.Create();
-        byte[] hashVal = hashFunc.ComputeHash(Encoding.Unicode.GetBytes(testString));
+    //     SHA256 hashFunc = SHA256.Create();
+    //     // byte[] hashVal = hashFunc.ComputeHash(Encoding.Unicode.GetBytes(testString));
 
-        // PrintByteArray(hashVal);
-        LamportSigner signer = new LamportSigner(hashFunc);
-        signer.Init();
-        Console.WriteLine(signer.privateKey.Count);
-        BigInteger[] sig = signer.Sign(Encoding.Unicode.GetBytes("Badabingus."));
+    //     // PrintByteArray(hashVal);
+    //     LamportSigner signer = new LamportSigner(hashFunc);
+    //     signer.Init();
+    //     Console.WriteLine(signer.privateKey.Count);
+    //     BigInteger[] sig = signer.Sign(Encoding.Unicode.GetBytes("Badabingus."));
 
-        Console.WriteLine(sig.Length);
-    }
+    //     // Console.WriteLine(sig.Length);
+
+    //     using (StreamWriter writer = new StreamWriter(@"./message.txt"))
+    //     {
+    //         for (int i = 0; i < 1; i++){
+    //         writer.WriteLine(System.Text.Encoding.Unicode.GetString(signer.publicKey[i].Item1));
+    //         PrintByteArray(signer.publicKey[i].Item1);
+    //         writer.WriteLine(System.Text.Encoding.Unicode.GetString(signer.publicKey[i].Item2));
+    //         PrintByteArray(signer.publicKey[i].Item2);
+    //         writer.WriteLine(sig[i].ToString());
+    //         Console.WriteLine(sig[i]);
+    //         }
+    //     }
+
+    // }
 
     public void Init()
     {
@@ -56,10 +74,15 @@ class LamportSigner
     10000000 = 0x80
     */
 
+    /// <summary>
+    /// Class <c>Point</c> models a point in a two-dimensional plane.
+    /// </summary>
     public BigInteger[] Sign(byte[] message)
     {
         BigInteger[] signature = new BigInteger[256];
         byte[] hashed = HashFunc.ComputeHash(message);
+
+        //Need to verify bit with bit 
         for (int i = 0; i < hashed.Length; i++)
         {
             if ((hashed[i] & 0x80) == 0x80) { signature[i * 8] = privateKey[i * 8].one; }
@@ -94,7 +117,6 @@ class LamportSigner
     {
         byte[] array = new byte[32];
         rnd.NextBytes(array);
-        // PrintByteArray(array);
         return new BigInteger(array);
     }
 
