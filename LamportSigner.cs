@@ -1,4 +1,6 @@
 using System;
+using System.Data.SqlTypes;
+using System.Diagnostics;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -20,36 +22,22 @@ class LamportSigner
         this.HashFunc = HashFunc;
     }
 
-    // static void Main(){
-    //     // string testString = "Hello World!";
+    public void Main()
+    {
+        BigInteger b = new BigInteger(2093910202020);
+        byte[] bytes = b.ToByteArray();
 
-    //     SHA256 hashFunc = SHA256.Create();
-    //     // byte[] hashVal = hashFunc.ComputeHash(Encoding.Unicode.GetBytes(testString));
+        byte[] padded = new byte[32];
+        
+        Array.Copy(bytes, 0, padded, 0, bytes.Length);
 
-    //     // PrintByteArray(hashVal);
-    //     LamportSigner signer = new LamportSigner(hashFunc);
-    //     signer.Init();
-    //     Console.WriteLine(signer.privateKey.Count);
-    //     BigInteger[] sig = signer.Sign(Encoding.Unicode.GetBytes("Badabingus."));
+        Console.WriteLine($"Size of normal: {bytes.Length}\nSize of padded: {padded.Length}\n");
+        PrintByteArray(bytes);
+        PrintByteArray(padded);
 
-    //     // Console.WriteLine(sig.Length);
-
-    //     using (StreamWriter writer = new StreamWriter(@"./message.txt"))
-    //     {
-    //         for (int i = 0; i < 1; i++){
-    //             writer.WriteLine(Encoding.Unicode.GetString(signer.publicKey[i].Item1));
-    //             writer.WriteLine(Encoding.Unicode.GetString(signer.publicKey[i].Item2));
-    //             writer.WriteLine(Encoding.Unicode.GetString(sig[i].ToByteArray()));
-    //             if(i==0){
-    //                 Console.WriteLine("PK_0");
-    //                 PrintByteArray(signer.publicKey[i].Item1);
-    //                 Console.WriteLine("PK_1");
-    //                 PrintByteArray(signer.publicKey[i].Item2);
-    //             }
-    //         }
-    //     }
-
-    // }
+        BigInteger pb = new BigInteger(padded);
+        Console.WriteLine($"Number: {b}\nPadded: {pb}\n{pb == b}");
+    }
 
     public void Init()
     {
@@ -57,7 +45,7 @@ class LamportSigner
         {
             var privTuple = (GenerateRandom256Bit(), GenerateRandom256Bit());
             privateKey.Add(privTuple);
-            var pubTuple = (privTuple.Item1.ToByteArray(), privTuple.Item2.ToByteArray());
+            var pubTuple = (Utils.ToByteArrayPadded(privTuple.Item1, 32), Utils.ToByteArrayPadded(privTuple.Item2, 32));
             pubTuple.Item1 = HashFunc.ComputeHash(pubTuple.Item1);
             pubTuple.Item2 = HashFunc.ComputeHash(pubTuple.Item2);
             publicKey.Add(pubTuple);
@@ -75,14 +63,12 @@ class LamportSigner
     01000000 = 0x40
     10000000 = 0x80
     */
-
-    /// <summary>
-    /// Class <c>Point</c> models a point in a two-dimensional plane.
-    /// </summary>
     public BigInteger[] Sign(byte[] message)
     {
         BigInteger[] signature = new BigInteger[256];
         byte[] hashed = HashFunc.ComputeHash(message);
+        // Console.WriteLine("DEBUG: Signing with hash:");
+        // PrintByteArray(hashed);
 
         //Need to verify bit with bit 
         for (int i = 0; i < hashed.Length; i++)
@@ -131,6 +117,19 @@ class LamportSigner
         return signature;
     }
 
+    public BigInteger[]? SignFile(string filepath)
+    {
+        try
+        {
+            string fileText = File.ReadAllText(filepath);
+            return Sign(Encoding.Unicode.GetBytes(fileText));
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private BigInteger GenerateRandom256Bit()
     {
         byte[] array = new byte[32];
@@ -140,13 +139,13 @@ class LamportSigner
     
     public void DumpSig(BigInteger[] sign, string filePath)
     {
-        using (FileStream fs = new FileStream(filePath, FileMode.CreateNew, FileAccess.Write))
+        using (FileStream fs = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.Write))
         {
             try
             {
                 foreach (BigInteger b in sign)
                 {
-                    fs.Write(b.ToByteArray(), 0, b.GetByteCount());
+                    fs.Write(Utils.ToByteArrayPadded(b, 32), 0, 32);
                 }
             }
             catch
@@ -158,7 +157,7 @@ class LamportSigner
 
     public void DumpPublicKey(string filePath)
     {
-        using (FileStream fs = new FileStream(filePath, FileMode.CreateNew, FileAccess.Write))
+        using (FileStream fs = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.Write))
         {
             try
             {
