@@ -41,6 +41,8 @@ class LamportSigner
 
     public void Init()
     {
+        privateKey.Clear();
+        publicKey.Clear();
         for (int i = 0; i < 256; i++)
         {
             var privTuple = (GenerateRandom256Bit(), GenerateRandom256Bit());

@@ -1,3 +1,5 @@
+namespace signature;
+
 using System.Numerics;
 using System.Runtime;
 using System.Security.Cryptography;
@@ -17,19 +19,19 @@ class LamportVerifier {
         this.HashFunc = HashFunc;
     }
 
-    static void Main(){
+    // static void Main(){
 
-        SHA256 hashFunc = SHA256.Create();
-        LamportSigner signer = new LamportSigner(hashFunc);
+    //     SHA256 hashFunc = SHA256.Create();
+    //     LamportSigner signer = new LamportSigner(hashFunc);
 
-        signer.Init();
-        var _sign = signer.SignFile("message.txt")!;
+    //     signer.Init();
+    //     var _sign = signer.SignFile("message.txt")!;
 
-        signer.DumpSig(_sign, "signature.txt");
-        signer.DumpPublicKey("pub.txt");
+    //     signer.DumpSig(_sign, "signature.txt");
+    //     signer.DumpPublicKey("pub.txt");
 
-        LamportVerifier verifier = new LamportVerifier(hashFunc);
-        Console.WriteLine(verifier.ValidateSignatureFromFiles("message.txt", "pub.txt", "signature.txt"));
+    //     LamportVerifier verifier = new LamportVerifier(hashFunc);
+    //     Console.WriteLine(verifier.ValidateSignatureFromFiles("message.txt", "pub.txt", "signature.txt"));
 
         // LamportVerifier verifier = new LamportVerifier(hashFunc);
         // using (StreamReader reader = new StreamReader(@"./message.txt")){
@@ -63,7 +65,7 @@ class LamportVerifier {
         //         }
         //     }  
         // }
-    }
+    // }
 
     public bool ValidateSignatureFromFiles(string messagePath, string pubKeyPath, string signaturePath)
     {
@@ -130,10 +132,15 @@ class LamportVerifier {
 
                 if (equal == false)
                 {
-                    Console.WriteLine($"Key/Hash mismatch (list {(whichList ? 1 : 2)}) at hash byte {i} bit {8-j}");
+                    Console.WriteLine($"INFO: Key/Hash mismatch (list {(whichList ? 1 : 2)}) at hash byte {i} bit {8-j}\n----");
+                    Console.Write("Public key (0) at bit: ");
                     PrintByteArray(publicKey[i * 8 + j].Item1);
+                    Console.Write("Public key (1) at bit: ");
                     PrintByteArray(publicKey[i * 8 + j].Item2);
+                    Console.Write("Signature at bit: ");
                     PrintByteArray(sign[i * 8 + j].ToByteArray());
+                    Console.WriteLine("----");
+
                     // PrintByteArray(Utils.ToByteArrayPadded(signer.privateKey[i * 8 + j].zero, 32));
                     // PrintByteArray(Utils.ToByteArrayPadded(signer.privateKey[i * 8 + j].one, 32));
                     // PrintByteArray(HashFunc.ComputeHash(Utils.ToByteArrayPadded(signer.privateKey[i * 8 + j].zero, 32)));
@@ -168,7 +175,7 @@ class LamportVerifier {
 
             }
         }
-        Console.WriteLine($"INFO: Loaded {c} keys.");
+        Console.WriteLine($"INFO: Verifier loaded {c} keys.");
     }
 
     public static void PrintByteArray(byte[] array)
